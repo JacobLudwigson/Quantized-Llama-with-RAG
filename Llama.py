@@ -18,7 +18,7 @@ def get_response(
     messages: List[Dict[str, str]],
     temperature: float = 0.7,
     top_p: float = 0.9,
-    max_tokens: int = 2048,
+    max_tokens: int = 512,
     stream: bool = True,
 ) -> str:
     headers = {"Content-Type": "application/json"}
@@ -50,7 +50,6 @@ def get_response(
                         content_piece = delta.get("content", "")
                         if "<" in content_piece:
                         # Stop processing when <|im_end|> is encountered
-                            # content += content_piece.split("<|im_end|>")[0]
                             break
                         content += content_piece
                         print(content_piece, end="", flush=True)
@@ -67,7 +66,7 @@ def get_response(
 # Function to run the chatbot
 def chatbot(
     server_url: str,
-    system_instructions: str = "You are an AI assitant that will assist in document augmented response. Please remember to ask clarifying questions to the user if something is unclear and always be kind.",
+    system_instructions: str = "You are an AI assitant that will assist in document augmented response. Please remember to ask clarifying questions to the user if something is unclear and always be kind. ",
     temperature: float = 0.7,
     top_p: float = 0.9,
     max_tokens: int = 2048,
