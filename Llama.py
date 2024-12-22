@@ -1,5 +1,4 @@
 print("Loading Libraries...")
-import pickle
 from langchain_community.document_loaders import PyPDFLoader
 import os
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -116,6 +115,7 @@ def chatbot(
                 messages.append({"role": "assistant", "content": response})
         elif (str(user_input) == '2'):
             while (True):
+                print("To exit this program, type 'exit' or 'quit' at anytime")
                 prompt = input("User: ")
                 userQueryEmbed = model.encode(prompt)
                 bestDocumentNumber = 0
