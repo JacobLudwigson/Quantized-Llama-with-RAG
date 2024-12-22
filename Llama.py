@@ -1,18 +1,35 @@
+print("Loading Libraries...")
+import pickle
+from langchain_community.document_loaders import PyPDFLoader
+import os
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+import numpy as np
+from sentence_transformers import SentenceTransformer
 import requests
+import pandas as pd
 import json
 from typing import List, Dict
-# from sentence_transformers import SentenceTransformer
 
-# # Load a pre-trained embeddings model
-# model = SentenceTransformer('all-MiniLM-L6-v2')
+print("Loading Embedding Model...")
+model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
-# # Generate an embedding for a sentence
-# sentence = "What is the capital of France?"
-# embedding = model.encode(sentence)
+def searchDocumentForChunkSimilarity(args):
+    bestScore = (-90000.0, 0)
+    currScore = 0.0
+    queryEmbedding = args[0]
+    chunkEmbeddings = args[1]
+    index = 0
+    for chunk in chunkEmbeddings:
+        dot = np.dot(chunk, queryEmbedding)
+        lenChunkVector = np.linalg.norm(chunk)
+        lenQueryVector = np.linalg.norm(queryEmbedding)
+        currScore = dot/(lenChunkVector * lenQueryVector)
+        if (currScore > bestScore[0]):
+            bestScore = (currScore, index)
+        index += 1
+    return bestScore
 
-# print(embedding)  # A dense vector representation
-
-# Function to send a request to the server and get a response
+# This function has been taken and slightly modified from this tutorial: https://medium.com/@manuelescobar-dev/achieve-state-of-the-art-llm-inference-llama-3-with-llama-cpp-c919eaeaac24
 def get_response(
     server_url: str,
     messages: List[Dict[str, str]],
@@ -39,6 +56,7 @@ def get_response(
     response.raise_for_status()  # Ensure the request was successful
     if stream:
         content = ""
+
         # print("response LINE: ", response.iter_lines())
         for line in response.iter_lines():
             if line:
@@ -63,29 +81,83 @@ def get_response(
             return result["choices"][0]["message"]["content"]
         else:
             return ""
-# Function to run the chatbot
+# This function is based on the function in this tutorial: https://medium.com/@manuelescobar-dev/achieve-state-of-the-art-llm-inference-llama-3-with-llama-cpp-c919eaeaac24
 def chatbot(
     server_url: str,
-    system_instructions: str = "You are an AI assitant that will assist in document augmented response. Please remember to ask clarifying questions to the user if something is unclear and always be kind. ",
+    system_instructions: str = "You are an AI assitant that will assist in answering user questions. Please remember to ask clarifying questions to the user if something is unclear and always be kind.",
     temperature: float = 0.7,
     top_p: float = 0.9,
-    max_tokens: int = 2048,
+    max_tokens: int = 512,
     stream: bool = True,
 ):
-    messages = [{"role": "system", "content": system_instructions}]
     while True:
-        prompt = input("User: ")
-        if prompt.lower() in ["exit", "quit"]:
+        print("\n----------------------------------------Quantized Llama CLI tool----------------------------------------\n")
+        print("1: Chat with Llama without document augmented responses")
+        print("2: Chat with Llama WITH document augmented responses")
+        print("3: Modify documents being considered in Llama's augmented responses")
+        print("To exit this program, type 'exit' or 'quit' at anytime")
+        print("\n--------------------------------------------------------------------------------------------------------\n")
+        user_input = input("Selection: ")
+        if user_input.lower() in ["exit", "quit"]:
             break
-        messages.append({"role": "user", "content": prompt})
-        print("Assistant: ", end="")
-        response = get_response(
-            server_url, messages, temperature, top_p, max_tokens, stream
-        )
-        messages.append({"role": "assistant", "content": response})
+        if (str(user_input) == '1'):
+            print("To exit this program, type 'exit' or 'quit' at anytime")
+            messages = [{"role": "system", "content": system_instructions}]
+            while (True):
+                prompt = input("User: ")
+                userQueryEmbed = model.encode(prompt)
+                if prompt.lower() in ["exit", "quit"]:
+                    break
+                messages.append({"role": "user", "content": prompt})
+                print("Assistant: ", end="")
+                response = get_response(
+                    server_url, messages, temperature, top_p, max_tokens, stream
+                )
+                messages.append({"role": "assistant", "content": response})
+        elif (str(user_input) == '2'):
+            while (True):
+                prompt = input("User: ")
+                userQueryEmbed = model.encode(prompt)
+                bestDocumentNumber = 0
+                documentNumber = 0
+                bestSimScore = (-90000.0, 0)
+                print("Performing cosine similarity search on the document set's text chunk embeddings...")
+                for document in documents:
+                    currSimScore = searchDocumentForChunkSimilarity([userQueryEmbed, documentChunkEmbeddings[documentNumber]])
+                    if (currSimScore[0] > bestSimScore[0]):
+                        bestSimScore = currSimScore
+                        bestDocumentNumber = documentNumber
+                    documentNumber += 1
+                if prompt.lower() in ["exit", "quit"]:
+                    break
+                docs = "[DOCUMENT]: '" + chunks[bestDocumentNumber][bestSimScore[1]]["page_content"] + "' [SOURCE]: " + chunks[bestDocumentNumber][bestSimScore[1]]["metadata"]['source'] + " Page number: " + str(chunks[bestDocumentNumber][bestSimScore[1]]["metadata"]['page'])
+                print("\n====================================Fetched Document chunk====================================\n")
+                print(docs)
+                print("\n==============================================================================================\n")
+
+                system_instructions += "  Please augment your response with this information: " + docs
+                messages = [{"role": "system", "content": system_instructions}]
+                messages.append({"role": "user", "content": prompt})
+
+                print("Assistant: ", end="")
+                response = get_response(
+                    server_url, messages, temperature, top_p, max_tokens, stream
+                )
+                messages.append({"role": "assistant", "content": response})
+        elif (str(user_input) == '3'):
+            break
+        else:
+            print ("Invalid selection!")
 
 
-    
+documentFolder = "data"
+documents = os.listdir(documentFolder)
+df = pd.read_json('docs.json', orient ='split', compression = 'infer')
 
+chunks = df['Chunks']
+documentChunkEmbeddings = df['Chunk Embeddings']
+
+# print(chunks.to_list())
+print("Starting chatbot...")
 server_url = "http://127.0.0.1:8080"
 chatbot(server_url=server_url)
