@@ -29,4 +29,4 @@
     - Once the vector search is complete, the fetched document chunk is then appended to the user's query such that the model can augment its response using the information fetched from the vector search, the fetched chunk is also output prior to the model's response so that the user can view what part of the document is being used.
 
 ## Example Usage
-    - ![Example Use Case](ExampleUsage.png)
+![Example Use Case](ExampleUsage.png)
