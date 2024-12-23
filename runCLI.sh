@@ -1,3 +1,3 @@
 #!/bin/bash
-
-python3 llama.py
+source venv/bin/activate;
+python3 llama.py;

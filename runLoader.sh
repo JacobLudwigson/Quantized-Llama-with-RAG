@@ -1,3 +1,3 @@
 #!/bin/bash
-
-python3 preLoadDocuments.py
+source venv/bin/activate;
+python3 preLoadDocuments.py;

@@ -121,31 +121,35 @@ def chatbot(
                 bestDocumentNumber = 0
                 documentNumber = 0
                 bestSimScore = (-90000.0, 0)
-                print("Performing cosine similarity search on the document set's text chunk embeddings...")
-                for document in documents:
-                    currSimScore = searchDocumentForChunkSimilarity([userQueryEmbed, documentChunkEmbeddings[documentNumber]])
-                    if (currSimScore[0] > bestSimScore[0]):
-                        bestSimScore = currSimScore
-                        bestDocumentNumber = documentNumber
-                    documentNumber += 1
-                if prompt.lower() in ["exit", "quit"]:
+                if (documents):
+                    print("Performing cosine similarity search on the document set's text chunk embeddings...")
+                    for document in documents:
+                        currSimScore = searchDocumentForChunkSimilarity([userQueryEmbed, documentChunkEmbeddings[documentNumber]])
+                        if (currSimScore[0] > bestSimScore[0]):
+                            bestSimScore = currSimScore
+                            bestDocumentNumber = documentNumber
+                        documentNumber += 1
+                    if prompt.lower() in ["exit", "quit"]:
+                        break
+                    docs = "[DOCUMENT]: '" + chunks[bestDocumentNumber][bestSimScore[1]]["page_content"] + "' [SOURCE]: " + chunks[bestDocumentNumber][bestSimScore[1]]["metadata"]['source'] + " Page number: " + str(chunks[bestDocumentNumber][bestSimScore[1]]["metadata"]['page'])
+                    print("\n====================================Fetched Document chunk====================================\n")
+                    print(docs)
+                    print("\n==============================================================================================\n")
+
+                    system_instructions += "  Please augment your response with this information: " + docs
+                    messages = [{"role": "system", "content": system_instructions}]
+                    messages.append({"role": "user", "content": prompt})
+
+                    print("Assistant: ", end="")
+                    response = get_response(
+                        server_url, messages, temperature, top_p, max_tokens, stream
+                    )
+                    messages.append({"role": "assistant", "content": response})
+                else:
+                    print("Theres no documents to augment with! Returning to main menu...")
                     break
-                docs = "[DOCUMENT]: '" + chunks[bestDocumentNumber][bestSimScore[1]]["page_content"] + "' [SOURCE]: " + chunks[bestDocumentNumber][bestSimScore[1]]["metadata"]['source'] + " Page number: " + str(chunks[bestDocumentNumber][bestSimScore[1]]["metadata"]['page'])
-                print("\n====================================Fetched Document chunk====================================\n")
-                print(docs)
-                print("\n==============================================================================================\n")
-
-                system_instructions += "  Please augment your response with this information: " + docs
-                messages = [{"role": "system", "content": system_instructions}]
-                messages.append({"role": "user", "content": prompt})
-
-                print("Assistant: ", end="")
-                response = get_response(
-                    server_url, messages, temperature, top_p, max_tokens, stream
-                )
-                messages.append({"role": "assistant", "content": response})
         elif (str(user_input) == '3'):
-            break
+            print("In order to add documents to llama's RAG system, simply add a pdf to the 'data' folder in the root directory of this project!\n")
         else:
             print ("Invalid selection!")
 
