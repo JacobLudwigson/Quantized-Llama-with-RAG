@@ -19,7 +19,7 @@ Since this challenge had a hardware requirement to run a document augmented LLM 
 
 Llama.cpp offers a fast CPU LLM inference because it implements multithreading and efficient memory access.
 
-We can speed up llama.cpp's capabilities even more by using a 3 bit quantized Llama 3.2-3B model for our LLM. Since this model's weights need to be loaded into RAM while its running, its size is a huge factor in performance. The quantized llama model I chose sits at around 1.6 gb, this small model footprint, combined with highly optimized model inference for CPU using llama.cpp allows for reasonable query times with accurate responses.
+We can speed up llama.cpp's capabilities even more by using a 3 bit quantized Llama 3.2-3B model for our LLM. Since this model's weights need to be loaded into memory while its running, its size is a huge factor in performance. The quantized llama model I chose sits at around 1.6 gb, this small model footprint, combined with highly optimized model inference for CPU using llama.cpp allows for reasonable query times with accurate responses.
 
 Depending widely on hardware, most queries take < 10 seconds for llama to start responding, however, document augmented responses can take slightly longer (as there are more tokens in the input). This is when run on my laptop with an intel i7 and 16 gb of RAM. 
 
