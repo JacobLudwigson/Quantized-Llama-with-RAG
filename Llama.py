@@ -55,8 +55,6 @@ def get_response(
     response.raise_for_status()  # Ensure the request was successful
     if stream:
         content = ""
-
-        # print("response LINE: ", response.iter_lines())
         for line in response.iter_lines():
             if line:
                 decoded_line = line.decode("utf-8").lstrip("data: ")
@@ -66,13 +64,12 @@ def get_response(
                         delta = json_line["choices"][0].get("delta", {})
                         content_piece = delta.get("content", "")
                         if "<" in content_piece:
-                        # Stop processing when <|im_end|> is encountered
                             break
                         content += content_piece
                         print(content_piece, end="", flush=True)
                 except json.JSONDecodeError:
                     continue
-        print()  # Ensure the next prompt starts on a new line
+        print()
         return content
     else:
         result = response.json()
@@ -80,7 +77,6 @@ def get_response(
             return result["choices"][0]["message"]["content"]
         else:
             return ""
-# This function is based on the function in this tutorial: https://medium.com/@manuelescobar-dev/achieve-state-of-the-art-llm-inference-llama-3-with-llama-cpp-c919eaeaac24
 def chatbot(
     server_url: str,
     system_instructions: str = "You are an AI assitant that will assist in answering user questions. Please remember to ask clarifying questions to the user if something is unclear and always be kind.",
