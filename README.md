@@ -25,7 +25,7 @@ Depending widely on hardware, most queries take < 10 seconds for llama to start 
 
 
 ## RAG System
-The retreival augmentation system I chose to adopt was relatively simple, as time searching document's only adds to the query time.
+The retreival augmentation system I chose to adopt was relatively simple, as time searching documents only adds to the query time.
 
 All documents must be PDF and put into the 'data' folder to be considered.
 
